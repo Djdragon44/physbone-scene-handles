@@ -89,8 +89,25 @@ namespace OpenSource.PhysBoneHandles
 
         private static Transform RootOf(VRCPhysBoneCollider c) => c.rootTransform != null ? c.rootTransform : c.transform;
 
+        private static bool IsValid(Quaternion q)
+        {
+            return !float.IsNaN(q.x) && !float.IsNaN(q.y) && !float.IsNaN(q.z) && !float.IsNaN(q.w)
+                && (q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w) > 0.0001f;
+        }
+
         private static void DrawColliderHandles(VRCPhysBoneCollider collider, List<VRCPhysBoneCollider> allSelected, bool isActive)
         {
+            // Self-heal: if a previous drag ever wrote a degenerate quaternion into this
+            // collider (Handles.RotationHandle can momentarily return one on some drags),
+            // every frame afterward would otherwise recompute NaN and spam the console forever.
+            if (!IsValid(collider.rotation))
+            {
+                Debug.LogWarning($"PhysBone Handles: {collider.name}'s VRCPhysBoneCollider rotation was invalid (NaN) - resetting it to identity.", collider);
+                Undo.RecordObject(collider, "Fix Invalid PhysBoneCollider Rotation");
+                collider.rotation = Quaternion.identity;
+                EditorUtility.SetDirty(collider);
+            }
+
             Transform root = RootOf(collider);
             float scale = root.lossyScale.x;
             Vector3 worldPos = root.TransformPoint(collider.position);
@@ -223,10 +240,13 @@ namespace OpenSource.PhysBoneHandles
         {
             EditorGUI.BeginChangeCheck();
             Quaternion newWorldRot = Handles.RotationHandle(worldRot, worldPos);
-            if (EditorGUI.EndChangeCheck())
+            // Handles.RotationHandle can momentarily return a degenerate (NaN) quaternion
+            // while dragging the free-rotate ring at certain angles - never write that out.
+            if (EditorGUI.EndChangeCheck() && IsValid(newWorldRot))
             {
-                Quaternion newLocalRot = Quaternion.Inverse(root.rotation) * newWorldRot;
-                Quaternion delta = newLocalRot * Quaternion.Inverse(collider.rotation);
+                newWorldRot = Quaternion.Normalize(newWorldRot);
+                Quaternion newLocalRot = Quaternion.Normalize(Quaternion.Inverse(root.rotation) * newWorldRot);
+                Quaternion delta = Quaternion.Normalize(newLocalRot * Quaternion.Inverse(collider.rotation));
                 bool alt = Event.current.alt;
                 bool shift = Event.current.shift;
 
@@ -243,7 +263,7 @@ namespace OpenSource.PhysBoneHandles
                 else
                 {
                     foreach (VRCPhysBoneCollider c in allSelected)
-                        c.rotation = delta * c.rotation;
+                        c.rotation = Quaternion.Normalize(delta * c.rotation);
                 }
                 MarkDirty(allSelected);
             }
