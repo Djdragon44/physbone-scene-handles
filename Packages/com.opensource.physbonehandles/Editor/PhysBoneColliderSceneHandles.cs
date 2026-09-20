@@ -118,9 +118,9 @@ namespace OpenSource.PhysBoneHandles
             using (new Handles.DrawingScope(wireColor))
             {
                 if (isCapsule)
-                    DrawCapsuleWire(worldPos, worldRot, collider.radius * scale, collider.height * scale);
+                    SceneHandleBatchUtil.DrawCapsuleWire(worldPos, worldRot, collider.radius * scale, collider.height * scale);
                 else
-                    DrawSphereWire(worldPos, worldRot, collider.radius * scale);
+                    SceneHandleBatchUtil.DrawSphereWire(worldPos, worldRot, collider.radius * scale);
                 Handles.SphereHandleCap(0, worldPos, worldRot, HandleUtility.GetHandleSize(worldPos) * 0.05f, EventType.Repaint);
             }
 
@@ -135,27 +135,6 @@ namespace OpenSource.PhysBoneHandles
 
             if (EditRotation && isCapsule)
                 HandleRotation(collider, allSelected, root, worldPos, worldRot);
-        }
-
-        private static void DrawSphereWire(Vector3 center, Quaternion rot, float radius)
-        {
-            Handles.DrawWireDisc(center, rot * Vector3.up, radius);
-            Handles.DrawWireDisc(center, rot * Vector3.right, radius);
-            Handles.DrawWireDisc(center, rot * Vector3.forward, radius);
-        }
-
-        private static void DrawCapsuleWire(Vector3 center, Quaternion rot, float radius, float height)
-        {
-            float half = Mathf.Max(height * 0.5f - radius, 0f);
-            Vector3 up = rot * Vector3.up;
-            Vector3 top = center + up * half;
-            Vector3 bottom = center - up * half;
-            Handles.DrawWireDisc(top, up, radius);
-            Handles.DrawWireDisc(bottom, up, radius);
-            Handles.DrawLine(top + rot * Vector3.right * radius, bottom + rot * Vector3.right * radius);
-            Handles.DrawLine(top - rot * Vector3.right * radius, bottom - rot * Vector3.right * radius);
-            Handles.DrawLine(top + rot * Vector3.forward * radius, bottom + rot * Vector3.forward * radius);
-            Handles.DrawLine(top - rot * Vector3.forward * radius, bottom - rot * Vector3.forward * radius);
         }
 
         // --- Radius ---------------------------------------------------------

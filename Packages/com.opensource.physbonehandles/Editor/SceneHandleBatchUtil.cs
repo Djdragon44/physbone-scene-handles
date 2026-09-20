@@ -45,6 +45,29 @@ namespace OpenSource.PhysBoneHandles
             foreach (T o in objects)
                 EditorUtility.SetDirty(o);
         }
+
+        // Shared wireframe drawing, used both by the live collider handles and by the Auto
+        // Collider Generator's "what would Apply actually create" scene preview.
+        internal static void DrawSphereWire(Vector3 center, Quaternion rot, float radius)
+        {
+            Handles.DrawWireDisc(center, rot * Vector3.up, radius);
+            Handles.DrawWireDisc(center, rot * Vector3.right, radius);
+            Handles.DrawWireDisc(center, rot * Vector3.forward, radius);
+        }
+
+        internal static void DrawCapsuleWire(Vector3 center, Quaternion rot, float radius, float height)
+        {
+            float half = Mathf.Max(height * 0.5f - radius, 0f);
+            Vector3 up = rot * Vector3.up;
+            Vector3 top = center + up * half;
+            Vector3 bottom = center - up * half;
+            Handles.DrawWireDisc(top, up, radius);
+            Handles.DrawWireDisc(bottom, up, radius);
+            Handles.DrawLine(top + rot * Vector3.right * radius, bottom + rot * Vector3.right * radius);
+            Handles.DrawLine(top - rot * Vector3.right * radius, bottom - rot * Vector3.right * radius);
+            Handles.DrawLine(top + rot * Vector3.forward * radius, bottom + rot * Vector3.forward * radius);
+            Handles.DrawLine(top - rot * Vector3.forward * radius, bottom - rot * Vector3.forward * radius);
+        }
     }
 }
 #endif
