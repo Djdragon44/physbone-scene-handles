@@ -50,6 +50,17 @@ new territory built for this package.
     behavior (not root/position/rotation, which are per-bone) from the active object's
     collider onto the rest of the selection.
 
+### Collider picker
+
+Select one or more `VRCPhysBone` objects and an **"Edit Colliders"** toggle appears in the
+top-right of the Scene view. Turn it on and every `VRCPhysBoneCollider` on the same avatar
+(scoped via `VRCAvatarDescriptor`) shows up as a small clickable sphere — green if it's
+already in the active PhysBone's Colliders list, red if it isn't. Click a sphere to toggle
+it, instead of dragging entries into the list one at a time (especially useful now that the
+Auto Collider Generator can leave you with 16+ body colliders to choose from). With multiple
+PhysBones selected, a click toggles that collider for all of them together; hold **Alt** to
+affect only the active one.
+
 ### Auto Collider Generator
 
 `Tools > PhysBone Scene Handles > Auto Collider Generator` — fits a `VRCPhysBoneCollider` to
@@ -82,6 +93,30 @@ Upper/Lower Legs, Neck, Head) automatically:
   aren't covered — add those with the batch-add menu command above instead, then size them
   with the scene handles.
 
+### Set Root to Self
+
+`VRCPhysBoneCollider`, `VRCPhysBone`, `VRCContactSender`, and `VRCContactReceiver` all have a
+Root Transform field that's very often just "this same GameObject" — but there's no built-in
+one-click way to say that, so you end up dragging the object onto its own field. This adds
+that:
+
+- A small **"S"** button appears directly inside the Root Transform row of each of those
+  four components' inspectors, right next to VRC's own object field — click it to set Root
+  to that GameObject's own Transform. Works with multiple objects selected at once (each
+  gets set to its own Transform, not all to the same one).
+- The same action is also available from the component's **⋮** context menu (or right-click
+  its header) as **"Set Root to Self"**, regardless of whether the inline button is showing.
+
+The inline button only exists because VRChat's SDK already ships its own inspector for all
+four components, and Unity has no supported way to add a control to a field row inside
+someone else's Editor. It works by Harmony-patching the internal Unity method every property
+field in the entire Editor funnels through (`UnityEditor.PropertyHandler.OnGUI`), found by
+disassembling Unity's own IL rather than guessing — not anything VRChat-specific. That's
+about as deep into undocumented internals as this package goes, and it's meaningfully more
+fragile than everything else here: a future Unity or VRChat SDK update could silently break
+it. If that happens the lookup fails gracefully (a console warning, nothing crashes) and you
+still have the context menu item, which doesn't depend on any of this.
+
 ## Installing
 
 Via VCC / ALCOM: add `https://djdragon44.github.io/physbone-scene-handles/index.json` as a
@@ -95,7 +130,10 @@ here compiles out (`#if PBHANDLES_VRCSDK_PRESENT`) if it isn't installed.
 ## Status
 
 Collider/PhysBone scene handles and the Auto Collider Generator have both been used and
-iterated on in a real project. One thing that's still unverified either way:
+iterated on in a real project. The Set Root to Self button (both the inline version and the
+context menu fallback) has been tested live, including the Harmony patch it depends on. The
+collider picker (`PhysBoneColliderPicker.cs`) is brand new and hasn't been tried in-editor
+yet. A couple of other things still unverified either way:
 
 - `PhysBoneRadiusSceneHandles.cs`'s wireframe chain-walk assumes a simple single-child bone
   chain (a finger, a ponytail); branching chains (hair with multiple strands off one root)
