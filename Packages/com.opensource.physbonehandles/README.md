@@ -1,10 +1,10 @@
 # PhysBone Scene Handles
 
-A free, open-source, cross-platform batch scene-view editor for VRChat `VRCPhysBoneCollider`
-and `VRCPhysBone` components, plus a tool to auto-generate a full set of body colliders from
-your avatar's mesh. No license key, no phone-home license/HWID check, no OS check — it's a
-normal Unity Editor package and should work anywhere Unity + the VRChat SDK does, Linux
-included.
+A free, open-source, cross-platform batch scene-view editor for VRChat `VRCPhysBoneCollider`,
+`VRCPhysBone`, `VRCContactSender`, and `VRCContactReceiver` components, plus a tool to
+auto-generate a full set of body colliders from your avatar's mesh. No license key, no
+phone-home license/HWID check, no OS check — it's a normal Unity Editor package and should
+work anywhere Unity + the VRChat SDK does, Linux included.
 
 ## Provenance
 
@@ -49,6 +49,25 @@ new territory built for this package.
   - **Copy Collider Settings (Active -> Selection)** — copies shape/radius/height/bounds
     behavior (not root/position/rotation, which are per-bone) from the active object's
     collider onto the rest of the selection.
+
+### Contact scene handles
+
+The same batch scene-view editing, extended to `VRCContactSender` and `VRCContactReceiver`.
+Both share one implementation (they're both just a `ContactBase` under the hood), so
+selecting a Sender and a Receiver together batches them exactly like selecting two of the
+same type would.
+
+- Handles for **Size**, Position, and Rotation are drawn on every selected Contact at once,
+  same Alt (only this one) / Shift (equalize) / no-modifier (batch additive) drag behavior
+  as the collider handles above.
+- Contact's third shape, **Box** (which `VRCPhysBoneCollider` doesn't have), gets three pairs
+  of opposing face-center sliders — one per axis — that grow the box symmetrically from its
+  center, the same way the capsule height handles work. Sphere only shows a radius handle
+  (rotation is meaningless on a sphere, so it's hidden); Capsule shows radius, height, and
+  rotation.
+- Its own toggle panel in the bottom-**left** of the Scene view (the collider/PhysBone panel
+  above is bottom-right) so the two never overlap if you select a collider and a Contact at
+  the same time.
 
 ### Collider picker
 
@@ -132,8 +151,12 @@ here compiles out (`#if PBHANDLES_VRCSDK_PRESENT`) if it isn't installed.
 Collider/PhysBone scene handles and the Auto Collider Generator have both been used and
 iterated on in a real project. The Set Root to Self button (both the inline version and the
 context menu fallback) has been tested live, including the Harmony patch it depends on. The
-collider picker (`PhysBoneColliderPicker.cs`) is brand new and hasn't been tried in-editor
-yet. A couple of other things still unverified either way:
+Contact scene handles (`ContactSceneHandles.cs`) have been live-tested for the Sphere shape
+(handles, toggle panel, and the rotation-hidden-on-sphere gating all confirmed); Capsule
+reuses already-proven code from the collider handles, but Box's face-slider handles have
+only been compile-checked, not click-tested, for lack of a Box-shaped Contact to try them
+on. The collider picker (`PhysBoneColliderPicker.cs`) is brand new and hasn't been tried
+in-editor yet. A couple of other things still unverified either way:
 
 - `PhysBoneRadiusSceneHandles.cs`'s wireframe chain-walk assumes a simple single-child bone
   chain (a finger, a ponytail); branching chains (hair with multiple strands off one root)

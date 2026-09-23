@@ -68,6 +68,16 @@ namespace OpenSource.PhysBoneHandles
             Handles.DrawLine(top + rot * Vector3.forward * radius, bottom + rot * Vector3.forward * radius);
             Handles.DrawLine(top - rot * Vector3.forward * radius, bottom - rot * Vector3.forward * radius);
         }
+
+        // Used by the VRCContactSender/VRCContactReceiver Box shape - the only shape of
+        // theirs that isn't a sphere or capsule.
+        internal static void DrawBoxWire(Vector3 center, Quaternion rot, Vector3 size)
+        {
+            Matrix4x4 prevMatrix = Handles.matrix;
+            Handles.matrix = Matrix4x4.TRS(center, rot, Vector3.one);
+            Handles.DrawWireCube(Vector3.zero, size);
+            Handles.matrix = prevMatrix;
+        }
     }
 }
 #endif
