@@ -29,7 +29,8 @@ namespace OpenSource.PhysBoneHandles
             set => EditorPrefs.SetBool(PrefPrefix + "Radius", value);
         }
 
-        private static bool EditHeight
+        // internal: the custom collider inspector exposes this as a per-row toggle too.
+        internal static bool EditHeight
         {
             get => EditorPrefs.GetBool(PrefPrefix + "Height", true);
             set => EditorPrefs.SetBool(PrefPrefix + "Height", value);
@@ -43,7 +44,8 @@ namespace OpenSource.PhysBoneHandles
             set => EditorPrefs.SetBool(PrefPrefix + "Position", value);
         }
 
-        private static bool EditRotation
+        // internal: same, exposed on the collider inspector's Rotation row.
+        internal static bool EditRotation
         {
             get => EditorPrefs.GetBool(PrefPrefix + "Rotation", false);
             set => EditorPrefs.SetBool(PrefPrefix + "Rotation", value);

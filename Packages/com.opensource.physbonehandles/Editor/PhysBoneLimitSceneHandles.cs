@@ -88,18 +88,23 @@ namespace OpenSource.PhysBoneHandles
             return p != null && p.propertyType == SerializedPropertyType.Enum ? p.enumValueIndex : fallback;
         }
 
-        // The limit's orientation comes from the component's own `rotation` field (VRChat
-        // documents it as pitch/yaw/roll about X/Y/Z), not from the bone transform - so a
-        // rotated limit cone has to be drawn rotated too, or the drawing lies about where the
-        // bone can actually swing.
+        // The limit's orientation comes from the component's `limitRotation` field, not from
+        // the bone transform - so a rotated limit cone has to be drawn rotated too, or the
+        // drawing lies about where the bone can actually swing.
+        //
+        // Two details worth stating, because getting either wrong draws a plausible-looking
+        // cone pointing somewhere the bone can't go:
+        //  * The field is named `limitRotation`, not `rotation`. VRCPhysBone has no `rotation`
+        //    field at all - that one belongs to VRCPhysBoneCollider. (0.5.0 looked up
+        //    "rotation" here and so always fell back to identity, silently ignoring the
+        //    setting; confirmed against VRChat's own serialized YAML for the component.)
+        //  * It serializes as a Vector3 of euler degrees, not a Quaternion.
         private static Quaternion LimitRotation(VRCPhysBone pb)
         {
-            SerializedProperty p = new SerializedObject(pb).FindProperty("rotation");
-            if (p == null || p.propertyType != SerializedPropertyType.Quaternion)
+            SerializedProperty p = new SerializedObject(pb).FindProperty("limitRotation");
+            if (p == null || p.propertyType != SerializedPropertyType.Vector3)
                 return Quaternion.identity;
-            Quaternion q = p.quaternionValue;
-            float mag = Mathf.Sqrt(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w);
-            return mag < 0.0001f ? Quaternion.identity : Quaternion.Normalize(q);
+            return Quaternion.Euler(p.vector3Value);
         }
 
         private static void WriteFloat(VRCPhysBone pb, string propertyName, float value, string undoLabel)

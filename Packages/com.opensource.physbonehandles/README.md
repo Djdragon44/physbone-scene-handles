@@ -76,8 +76,8 @@ number.
   direction. **Polar** draws an elliptical cone using both angles, for a joint that should
   swing freely one way and barely at all the other. **Hinge** draws a flat fan in the plane
   the bone is allowed to rotate in.
-- Orientation comes from the component's own Rotation field (pitch/yaw/roll about X/Y/Z), not
-  from the bone transform, so a rotated limit draws rotated.
+- Orientation comes from the component's own **Limit Rotation** field, not from the bone
+  transform, so a rotated limit draws rotated.
 - A grab handle on the first joint's rim edits Max Angle with a live degree readout, same
   Alt / Shift batch rules as every other handle here.
 - The limit fields are read and written through `SerializedObject` by property name rather
@@ -171,6 +171,40 @@ fragile than everything else here: a future Unity or VRChat SDK update could sil
 it. If that happens the lookup fails gracefully (a console warning, nothing crashes) and you
 still have the context menu item, which doesn't depend on any of this.
 
+### Custom component UI
+
+The other half of the scene handles: `VRCPhysBone` and `VRCPhysBoneCollider` get a replacement
+inspector in place of the one the SDK ships. The stock PhysBone inspector is a flat list of
+~40 fields, so setting up a tail means scrolling past forces to find limits, scrolling back
+for the radius, then switching to the Scene view to find out whether any of it worked.
+
+- **Collapsible sections** — Transforms, Forces, Limits, Collisions, Stretch & Squish,
+  Grab & Pose, Options, Gizmos. Expand state is stored in the SDK's *own* `foldout_*` fields,
+  so a section you open here is open in the stock inspector too.
+- **Arm a handle from the row it belongs to.** Rows that have a Scene-view handle in this
+  package carry a small **✐** button at the end: Endpoint Position, Limit Type, and the
+  collider's Radius / Height / Position / Rotation. Click it and that handle switches on, no
+  trip to the corner toggle panel.
+- **On/off settings ride on their section header** as a green/red pill, matching how the rest
+  of this package signals state — Allow Collision on Collisions, Allow Grabbing on Grab &
+  Pose, Show Gizmos on Gizmos, Inside/Outside Bounds on the collider's Shape row.
+- **The distribution curves are hidden by default.** Every force (Pull, Spring, Stiffness,
+  Gravity, Gravity Falloff, Immobile) has a paired `AnimationCurve` that most setups never
+  touch. An **Advanced** pill on the Forces header brings them back, inline beside each value
+  rather than on their own rows.
+- **Fields that don't apply aren't shown.** Max Angle Z only appears for a Polar limit;
+  Limit Type None says so instead of showing angle fields that do nothing; a Sphere collider
+  hides Height and Rotation, exactly like the handles do.
+- **Opt out:** `Tools > PhysBone Handles > Use Custom Component UI`. Worth knowing what "off"
+  gives you: Unity only lets one `[CustomEditor]` win per type and there's no way to hand
+  control back to VRChat's at runtime, so off falls through to Unity's default field list —
+  every serialized field, fully editable, just unstyled. Not the SDK's inspector.
+
+Every field is looked up by serialized name and skipped if it's missing, so if a future SDK
+renames one, that single row disappears and the rest of the component still draws. The names
+come from VRChat's own serialized YAML output for the components rather than from any
+decompilation.
+
 ## Installing
 
 Via VCC / ALCOM: add `https://djdragon44.github.io/physbone-scene-handles/index.json` as a
@@ -198,16 +232,26 @@ handles branching chains (`PhysBoneChainUtil.BuildChains` returns every root-to-
 and non-uniform scale no longer silently uses `lossyScale.x` — it takes the largest axis,
 since over-estimating a collider is the safer error.
 
-The newest additions have **not been tried in-editor at all** yet, and there was no Unity
-install available to even compile-check them:
+The newest additions compile clean against Unity 2022.3 plus the real VRChat SDK, but have
+**not been click-tested in-editor** yet:
 
-- Angle limit handles (`PhysBoneLimitSceneHandles.cs`). Field names (`limitType`,
-  `maxAngleX`, `maxAngleZ`, `rotation`) were confirmed against the real SDK DLLs, and the
-  LimitType ordering against VRChat's published docs, but the drawn cone geometry is a
-  best-reading of those docs rather than something matched against runtime behaviour. If a
-  limit draws in a direction the bone plainly can't swing, that's the thing to report.
+- The custom component UI (`VRCPhysBoneInspector.cs`, `VRCPhysBoneColliderInspector.cs`,
+  `InspectorUI.cs`). Field names come from VRChat's own serialized YAML for the components,
+  so they're exactly what Unity serializes; what hasn't been seen running is the layout —
+  the manually-laid-out rows (pill buttons on section headers, the ✐ handle toggles, the
+  inline force curves) could be off by a few pixels or crowd each other at a narrow
+  inspector width. If something overlaps or clips, that's the thing to report.
 - The endpoint drag handle, the multi-strand chain walk, and
   **Mirror Settings to Other Side** (`PhysBoneMirrorUtility.cs`).
+
+Angle limit handles (`PhysBoneLimitSceneHandles.cs`) had a real bug in 0.5.0: the limit
+orientation was read from a field named `rotation`, which `VRCPhysBone` doesn't have — that
+one belongs to the *collider*. The PhysBone's field is `limitRotation`, and it serializes as
+a Vector3 of euler degrees rather than a quaternion, so the lookup always failed and every
+cone drew unrotated, silently ignoring whatever Limit Rotation was set. Fixed in 0.6.0. The
+cone geometry itself is still a best-reading of VRChat's published docs rather than something
+matched against runtime behaviour, so if a limit draws in a direction the bone plainly can't
+swing, report it.
 
 Report anything that doesn't feel right and it'll get fixed.
 
