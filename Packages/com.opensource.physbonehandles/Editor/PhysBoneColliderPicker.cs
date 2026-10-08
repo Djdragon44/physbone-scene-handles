@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
-using VRC.Dynamics;
-using VRC.SDK3.Avatars.Components;
 using VRC.SDK3.Dynamics.PhysBone.Components;
 
 namespace OpenSource.PhysBoneHandles
@@ -62,27 +60,12 @@ namespace OpenSource.PhysBoneHandles
                 DrawColliderButton(candidate, active, physBones);
         }
 
-        // Scopes candidates to the same avatar as the PhysBone (via VRCAvatarDescriptor), so
-        // picking doesn't get cluttered with unrelated colliders elsewhere in the scene. Falls
-        // back to the topmost parent if there's no descriptor (e.g. a bare test rig).
+        // Scopes candidates to the same avatar as the PhysBone, so picking doesn't get
+        // cluttered with unrelated colliders elsewhere in the scene.
         private static List<VRCPhysBoneCollider> GetCandidateColliders(Transform pbTransform)
-        {
-            VRCAvatarDescriptor descriptor = pbTransform.GetComponentInParent<VRCAvatarDescriptor>();
-            GameObject scopeRoot;
-            if (descriptor != null)
-            {
-                scopeRoot = descriptor.gameObject;
-            }
-            else
-            {
-                Transform t = pbTransform;
-                while (t.parent != null)
-                    t = t.parent;
-                scopeRoot = t.gameObject;
-            }
-
-            return scopeRoot.GetComponentsInChildren<VRCPhysBoneCollider>(true).ToList();
-        }
+            => AvatarScopeUtil.ScopeRootOf(pbTransform)
+                .GetComponentsInChildren<VRCPhysBoneCollider>(true)
+                .ToList();
 
         private static void DrawColliderButton(VRCPhysBoneCollider candidate, VRCPhysBone active, List<VRCPhysBone> allSelected)
         {

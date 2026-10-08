@@ -35,7 +35,9 @@ namespace OpenSource.PhysBoneHandles
             set => EditorPrefs.SetBool(PrefPrefix + "Height", value);
         }
 
-        private static bool EditPosition
+        // internal: PhysBoneRadiusSceneHandles reuses this one toggle for the VRCPhysBone
+        // endpoint handle, so "Position" means the same thing for colliders and PhysBones.
+        internal static bool EditPosition
         {
             get => EditorPrefs.GetBool(PrefPrefix + "Position", true);
             set => EditorPrefs.SetBool(PrefPrefix + "Position", value);
@@ -109,7 +111,7 @@ namespace OpenSource.PhysBoneHandles
             }
 
             Transform root = RootOf(collider);
-            float scale = root.lossyScale.x;
+            float scale = PhysBoneChainUtil.UniformScale(root);
             Vector3 worldPos = root.TransformPoint(collider.position);
             Quaternion worldRot = root.rotation * collider.rotation;
             bool isCapsule = collider.shapeType == VRCPhysBoneColliderBase.ShapeType.Capsule;
@@ -259,12 +261,15 @@ namespace OpenSource.PhysBoneHandles
 
         // --- On-screen "Editing" toggle panel ----------------------------------
 
-        private static void DrawTogglePanel(SceneView sceneView)
+        // internal: PhysBoneRadiusSceneHandles draws this itself when the selection is
+        // PhysBones only. Without that, a selection with no collider in it would show no panel
+        // at all, and the PhysBone-only "Limits" toggle would be unreachable.
+        internal static void DrawTogglePanel(SceneView sceneView)
         {
             Handles.BeginGUI();
             const float w = 120f, h = 22f, pad = 4f;
             float x = sceneView.position.width - w - 10f;
-            float y = sceneView.position.height - (h + pad) * 4f - 30f;
+            float y = sceneView.position.height - (h + pad) * 5f - 30f;
 
             DrawToggleButton(new Rect(x, y, w, h), "Radius", EditRadius, v => EditRadius = v);
             y += h + pad;
@@ -273,6 +278,10 @@ namespace OpenSource.PhysBoneHandles
             DrawToggleButton(new Rect(x, y, w, h), "Position", EditPosition, v => EditPosition = v);
             y += h + pad;
             DrawToggleButton(new Rect(x, y, w, h), "Rotation", EditRotation, v => EditRotation = v);
+            y += h + pad;
+            // PhysBone-only, but it lives in the same panel so there's one place to look.
+            DrawToggleButton(new Rect(x, y, w, h), "Limits",
+                PhysBoneLimitSceneHandles.EditLimits, v => PhysBoneLimitSceneHandles.EditLimits = v);
 
             Handles.EndGUI();
         }

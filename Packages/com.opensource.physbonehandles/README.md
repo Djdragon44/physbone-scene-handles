@@ -32,6 +32,12 @@ new territory built for this package.
   each node. Dragging a handle shapes the `radiusCurve` (the per-position multiplier on the
   base `radius`) at that point — e.g. grab the middle of a tail and pull it out to bulge it,
   or pull the tip in to taper it, without hand-editing curve keys in the inspector.
+  Branching chains are fully walked: a PhysBone on a Hand draws all five fingers, not just
+  whichever one happens to be the first child. A bone that several strands pass through gets
+  one handle, not a stack of them fighting over the same curve key.
+- With "Position" on, a `VRCPhysBone`'s **Endpoint Position** gets a drag handle at the chain
+  tip, so you can see and place that virtual extra segment instead of guessing at three raw
+  numbers in the inspector.
 - A small toggle panel in the bottom-right of the Scene view turns each handle type on/off
   (green = active, red = off).
 - While Position or Rotation editing is active, Unity's own built-in Move/Rotate gizmo for
@@ -49,6 +55,35 @@ new territory built for this package.
   - **Copy Collider Settings (Active -> Selection)** — copies shape/radius/height/bounds
     behavior (not root/position/rotation, which are per-bone) from the active object's
     collider onto the rest of the selection.
+  - **Mirror Settings to Other Side** — finds each selected object's opposite-side twin by
+    name (`Left`/`Right`, `_L`/`_R`, `.L`/`.R`, `-L`/`-R`, and lowercase variants) and copies
+    its `VRCPhysBoneCollider` / `VRCContactSender` / `VRCContactReceiver` across, flipping
+    `position` and `rotation` about X and repointing a self-referencing `rootTransform` at the
+    target. The copy goes through `SerializedObject` property-by-property rather than naming
+    fields, so every serialized setting comes over — including any the SDK adds later. Adds
+    the component to the twin if it doesn't have one yet. Objects with no unambiguous side
+    marker, or no twin in the scene, are skipped and listed in a console warning.
+
+### Angle limit handles
+
+A fifth **"Limits"** toggle in the bottom-right panel draws a `VRCPhysBone`'s angle limits
+directly on the bones. Limits are otherwise the hardest part of a PhysBone to set up blind —
+"Max Angle 45" in the inspector tells you nothing about where the bone can actually swing to,
+so the usual loop is type a number, enter play mode, shake the avatar, come back, type another
+number.
+
+- **Angle** draws a cone from each joint, opening to Max Angle around the bone's rest
+  direction. **Polar** draws an elliptical cone using both angles, for a joint that should
+  swing freely one way and barely at all the other. **Hinge** draws a flat fan in the plane
+  the bone is allowed to rotate in.
+- Orientation comes from the component's own Rotation field (pitch/yaw/roll about X/Y/Z), not
+  from the bone transform, so a rotated limit draws rotated.
+- A grab handle on the first joint's rim edits Max Angle with a live degree readout, same
+  Alt / Shift batch rules as every other handle here.
+- The limit fields are read and written through `SerializedObject` by property name rather
+  than direct field access. It costs a little speed, but if a future SDK renames or drops one
+  of them this feature quietly switches itself off instead of breaking the whole package's
+  compile.
 
 ### Contact scene handles
 
@@ -156,13 +191,23 @@ Contact scene handles (`ContactSceneHandles.cs`) have been live-tested for the S
 reuses already-proven code from the collider handles, but Box's face-slider handles have
 only been compile-checked, not click-tested, for lack of a Box-shaped Contact to try them
 on. The collider picker (`PhysBoneColliderPicker.cs`) is brand new and hasn't been tried
-in-editor yet. A couple of other things still unverified either way:
+in-editor yet.
 
-- `PhysBoneRadiusSceneHandles.cs`'s wireframe chain-walk assumes a simple single-child bone
-  chain (a finger, a ponytail); branching chains (hair with multiple strands off one root)
-  just stop drawing at the branch point, which is probably fine but hasn't been checked.
-- Non-uniform scale on a bone — everything uses `lossyScale.x` as a uniform scale factor,
-  which will be wrong if a bone is scaled non-uniformly.
+Both items that used to be listed here as known weaknesses are now fixed: the chain walk
+handles branching chains (`PhysBoneChainUtil.BuildChains` returns every root-to-leaf path),
+and non-uniform scale no longer silently uses `lossyScale.x` — it takes the largest axis,
+since over-estimating a collider is the safer error.
+
+The newest additions have **not been tried in-editor at all** yet, and there was no Unity
+install available to even compile-check them:
+
+- Angle limit handles (`PhysBoneLimitSceneHandles.cs`). Field names (`limitType`,
+  `maxAngleX`, `maxAngleZ`, `rotation`) were confirmed against the real SDK DLLs, and the
+  LimitType ordering against VRChat's published docs, but the drawn cone geometry is a
+  best-reading of those docs rather than something matched against runtime behaviour. If a
+  limit draws in a direction the bone plainly can't swing, that's the thing to report.
+- The endpoint drag handle, the multi-strand chain walk, and
+  **Mirror Settings to Other Side** (`PhysBoneMirrorUtility.cs`).
 
 Report anything that doesn't feel right and it'll get fixed.
 
