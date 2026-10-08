@@ -6,16 +6,18 @@ the change to a whole selection (Alt = just this one, Shift = equalize). No lice
 phone-home license/HWID check, no OS check. Cross-platform.
 
 The actual package lives in [`Packages/com.opensource.physbonehandles`](Packages/com.opensource.physbonehandles) —
-see its README for what it does and how to use it.
+see its README for what it does and how to use it, or
+[`FEATURES.md`](Packages/com.opensource.physbonehandles/FEATURES.md) for the full feature
+list.
 
 ## Installing
 
 **Via VCC / ALCOM (VPM):** Add this repository's listing URL —
-`https://djdragon44.github.io/physbone-scene-handles/index.json` — under Settings > Packages >
+`https://dragonboivrc.github.io/physbone-scene-handles/index.json` — under Settings > Packages >
 Add Repository, then add "PhysBone Scene Handles" to your project from the package list.
 
 **Manually:** Download the `.zip` or `.unitypackage` from the
-[latest release](https://github.com/Djdragon44/physbone-scene-handles/releases/latest) and
+[latest release](https://github.com/DragonBoiVRC/physbone-scene-handles/releases/latest) and
 import/extract it into your project.
 
 ## Contributing / publishing new versions

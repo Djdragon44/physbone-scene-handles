@@ -6,6 +6,8 @@ auto-generate a full set of body colliders from your avatar's mesh. No license k
 phone-home license/HWID check, no OS check — it's a normal Unity Editor package and should
 work anywhere Unity + the VRChat SDK does, Linux included.
 
+For a plain checklist of everything it does, see [`FEATURES.md`](FEATURES.md).
+
 ## Provenance
 
 This is an **original implementation**, written from scratch against VRChat's own public
@@ -215,10 +217,10 @@ decompilation.
 
 ## Installing
 
-Via VCC / ALCOM: add `https://djdragon44.github.io/physbone-scene-handles/index.json` as a
+Via VCC / ALCOM: add `https://dragonboivrc.github.io/physbone-scene-handles/index.json` as a
 repository (Settings > Packages > Add Repository), then add "PhysBone Scene Handles" to your
 project. Manually: download the `.zip`/`.unitypackage` from the
-[latest release](https://github.com/Djdragon44/physbone-scene-handles/releases/latest), or
+[latest release](https://github.com/DragonBoiVRC/physbone-scene-handles/releases/latest), or
 copy `Packages/com.opensource.physbonehandles` from this repo straight into your project's
 `Packages/` folder. Requires the VRChat SDK3 Avatars package (`com.vrchat.base`) — everything
 here compiles out (`#if PBHANDLES_VRCSDK_PRESENT`) if it isn't installed.
