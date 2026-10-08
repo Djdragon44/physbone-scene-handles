@@ -10,9 +10,10 @@ namespace OpenSource.PhysBoneHandles
     // VRChat's for the same type, and if ours ever misbehaves on a future SDK the user needs a
     // way out that isn't deleting files.
     //
-    // Off doesn't restore VRChat's editor (two [CustomEditor]s for one type can't hand off at
-    // runtime) - it falls back to Unity's default field list, which shows every serialized
-    // field and stays fully editable.
+    // Off restores VRChat's own inspector exactly. Our editors don't win by attribute alone -
+    // the SDK ships its own [CustomEditor] for the same types and Unity picks one - so
+    // CustomEditorOverridePatch substitutes ours at the point Unity decides. With this switch
+    // off that patch stands down and Unity's original answer (VRChat's editor) is returned.
     internal static class CustomInspectorSettings
     {
         private const string Key = "OpenSource.PhysBoneHandles.CustomInspectorUI";
@@ -28,7 +29,13 @@ namespace OpenSource.PhysBoneHandles
         private static void Toggle()
         {
             Enabled = !Enabled;
-            // Force open inspectors to redraw with the other layout immediately.
+
+            // A repaint isn't enough. Which Editor class a component gets is decided once,
+            // when the tracker builds its editor list, and CustomEditorOverridePatch only gets
+            // asked at that moment - so repainting just redraws the editor instance Unity
+            // already chose. The tracker has to rebuild for the switch to take effect without
+            // reselecting the object.
+            ActiveEditorTracker.sharedTracker.ForceRebuild();
             foreach (Editor editor in ActiveEditorTracker.sharedTracker.activeEditors)
                 editor.Repaint();
         }

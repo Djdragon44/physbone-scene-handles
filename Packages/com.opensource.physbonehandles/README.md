@@ -195,10 +195,18 @@ for the radius, then switching to the Scene view to find out whether any of it w
 - **Fields that don't apply aren't shown.** Max Angle Z only appears for a Polar limit;
   Limit Type None says so instead of showing angle fields that do nothing; a Sphere collider
   hides Height and Rotation, exactly like the handles do.
-- **Opt out:** `Tools > PhysBone Handles > Use Custom Component UI`. Worth knowing what "off"
-  gives you: Unity only lets one `[CustomEditor]` win per type and there's no way to hand
-  control back to VRChat's at runtime, so off falls through to Unity's default field list —
-  every serialized field, fully editable, just unstyled. Not the SDK's inspector.
+- **Opt out:** `Tools > PhysBone Handles > Use Custom Component UI`. Off restores VRChat's own
+  inspector exactly, and takes effect immediately without reselecting the component.
+
+How it replaces the SDK's inspector, since `[CustomEditor]` alone isn't enough: the SDK ships
+its own `VRCPhysBoneEditor` / `VRCPhysBoneColliderEditor`, precompiled, carrying the same
+attribute for the same types. Unity honours exactly one editor per type and theirs won, which
+is why 0.6.0 shipped this UI and nobody could see it. `CustomEditorOverridePatch` now hooks
+the one place Unity decides (`UnityEditor.CustomEditorAttributes.FindCustomEditorType*`) and
+swaps in ours — and stands down when the toggle is off, which is what makes "off" give you
+the real SDK inspector rather than a bare field list. If a future Unity renames that internal
+method, the hook misses, a warning is logged, and you get VRChat's inspector plus every Scene
+handle: 0.5.0's behaviour, nothing broken.
 
 Every field is looked up by serialized name and skipped if it's missing, so if a future SDK
 renames one, that single row disappears and the rest of the component still draws. The names
@@ -236,7 +244,9 @@ The newest additions compile clean against Unity 2022.3 plus the real VRChat SDK
 **not been click-tested in-editor** yet:
 
 - The custom component UI (`VRCPhysBoneInspector.cs`, `VRCPhysBoneColliderInspector.cs`,
-  `InspectorUI.cs`). Field names come from VRChat's own serialized YAML for the components,
+  `InspectorUI.cs`, `CustomEditorOverridePatch.cs`). In 0.6.0 this never drew at all — the SDK's
+  own editor won the `[CustomEditor]` race; 0.6.1 adds the override that makes ours win, so the
+  layout gets its first real look now. Field names come from VRChat's own serialized YAML,
   so they're exactly what Unity serializes; what hasn't been seen running is the layout —
   the manually-laid-out rows (pill buttons on section headers, the ✐ handle toggles, the
   inline force curves) could be off by a few pixels or crowd each other at a narrow
