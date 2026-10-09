@@ -58,6 +58,8 @@ namespace OpenSource.PhysBoneHandles
         private static float _accumulator;
         private static bool _prevDisableTiming;
         private static float _prevDebugTimeElapsed;
+        private static PhysBoneManager _prevInst;
+        private static bool _tookOverInst;
 
         internal static bool IsRunning => _running;
         internal static bool IsPaused => _paused;
@@ -316,8 +318,7 @@ namespace OpenSource.PhysBoneHandles
         private static bool CreateManager()
         {
             // If a manager already exists (the SDK's own, left over from a play session, or
-            // another tool's) reuse it rather than fighting over the static Inst. Creating a
-            // second one makes PhysBoneManager.Awake disable it, and nothing would ever step.
+            // another tool's) reuse it rather than creating a second one.
             if (PhysBoneManager.Inst != null)
             {
                 _manager = PhysBoneManager.Inst;
@@ -338,13 +339,34 @@ namespace OpenSource.PhysBoneHandles
                 // component can't end up added twice.
                 _manager.IsSDK = false;
 
-                // Awake runs on AddComponent and calls Init(), but Init() is idempotent and
-                // this makes the ordering explicit rather than relying on it.
+                // PhysBoneManager has no [ExecuteAlways], so Awake does NOT run on
+                // AddComponent in edit mode. Init() is therefore ours to call, not a
+                // belt-and-braces repeat of what Awake already did.
                 _manager.Init();
             }
 
             if (_manager == null)
                 return false;
+
+            // The step that makes any of this move.
+            //
+            // PreScheduleDynamics does not take a manager - it reads the static
+            // PhysBoneManager.Inst and skips the PhysBone pass entirely when that is null:
+            //
+            //     if (PhysBoneManager.Inst != null)
+            //         dependsOn = PhysBoneManager.Inst.ScheduleExecutionJob(dependsOn);
+            //
+            // Inst is assigned in Awake, which (no [ExecuteAlways]) never runs in edit mode.
+            // So a manager that is constructed, Init()ed and registered with is still never
+            // stepped: the constraint and contact passes run, the avatar moves under a test
+            // motion, and the bones stay rigid. Publishing Inst ourselves is what connects
+            // the registered chains to the solve. Restored on stop.
+            if (!ReferenceEquals(PhysBoneManager.Inst, _manager))
+            {
+                _prevInst = PhysBoneManager.Inst;
+                PhysBoneManager.Inst = _manager;
+                _tookOverInst = true;
+            }
 
             _prevDisableTiming = PhysBoneManager.DisableTiming;
             _prevDebugTimeElapsed = PhysBoneManager.DebugTimeElapsed;
@@ -449,6 +471,16 @@ namespace OpenSource.PhysBoneHandles
 
             PhysBoneManager.DisableTiming = _prevDisableTiming;
             PhysBoneManager.DebugTimeElapsed = _prevDebugTimeElapsed;
+
+            // Put Inst back exactly as it was. Leaving ours published would point the SDK's
+            // own scheduler at a manager we are about to destroy.
+            if (_tookOverInst)
+            {
+                if (ReferenceEquals(PhysBoneManager.Inst, _manager))
+                    PhysBoneManager.Inst = _prevInst;
+                _tookOverInst = false;
+                _prevInst = null;
+            }
 
             if (_host != null)
             {

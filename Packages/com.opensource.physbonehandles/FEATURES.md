@@ -1,6 +1,6 @@
 # Feature List
 
-Everything PhysBone Scene Handles does, as of **0.7.0**. Free, open source, cross-platform,
+Everything PhysBone Scene Handles does, as of **0.7.1**. Free, open source, cross-platform,
 no license key and no phone-home check.
 
 Covers four VRChat components: `VRCPhysBone`, `VRCPhysBoneCollider`, `VRCContactSender`,
@@ -197,4 +197,6 @@ have been used in a real project; the custom inspector's layout, the endpoint ha
 multi-strand walk and Mirror Settings compile clean but have not been click-tested. The whole
 live preview subsystem (section 8) is new in 0.7.0 and is compile-verified only — the panel
 layout, the behaviour in motion, grab/pose interaction and the inspector viewport have not been
-click-tested.
+click-tested. 0.7.1 fixes the preview not simulating at all: the solver is driven through the
+static `PhysBoneManager.Inst`, which only `Awake` sets and which therefore stays null in edit
+mode, so the registered chains were never stepped.

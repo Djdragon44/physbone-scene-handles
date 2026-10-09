@@ -12,6 +12,13 @@ list.
 
 ## Status
 
+**0.7.1** fixes the live preview not simulating: the avatar moved under a test motion but the
+bones stayed rigid. The solver is reached through the static `PhysBoneManager.Inst`, which is
+only ever assigned in `Awake` — and `PhysBoneManager` has no `[ExecuteAlways]`, so `Awake` does
+not run in edit mode. The preview registered every chain with a manager the solver was then
+never asked to step. It now publishes its manager as `Inst` while running and restores the
+previous value on stop.
+
 **0.7.0** adds a live preview: VRChat's own PhysBone solver, run on the selected components in
 edit mode, with pause/frame-step, 72–144 Hz, test motions, AnimationClip playback, grab/pose
 testing, a throwaway test collider, tip trails, a baseline freeze, a live `_Angle`/`_Stretch`/

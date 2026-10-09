@@ -298,6 +298,16 @@ The newest additions compile clean against Unity 2022.3 plus the real VRChat SDK
   computed by hand per visible row, so rows may crowd or clip; grab picking, the drag handle,
   the right-click release, and the inspector 3D viewport's orbit/zoom have never been clicked.
 
+The live preview in 0.7.0 did not actually simulate, and 0.7.1 fixes it. The avatar moved
+under a test motion but the bones stayed rigid, because `VRCDynamicsScheduler.PreScheduleDynamics`
+does not take a manager — it reads the static `PhysBoneManager.Inst` and skips the PhysBone
+pass entirely when that is null. `Inst` is assigned in `Awake`, and `PhysBoneManager` has no
+`[ExecuteAlways]`, so in edit mode `Awake` never runs. The preview built a manager, initialised
+it and registered every chain with it, and then the solver was never asked to step those chains:
+the constraint and contact passes ran, the test motion moved the root, and nothing swung. The
+preview now publishes its manager as `Inst` for the duration and restores the previous value on
+stop.
+
 Angle limit handles (`PhysBoneLimitSceneHandles.cs`) had a real bug in 0.5.0: the limit
 orientation was read from a field named `rotation`, which `VRCPhysBone` doesn't have — that
 one belongs to the *collider*. The PhysBone's field is `limitRotation`, and it serializes as
