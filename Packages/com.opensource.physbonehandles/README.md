@@ -215,6 +215,40 @@ renames one, that single row disappears and the rest of the component still draw
 come from VRChat's own serialized YAML output for the components rather than from any
 decompilation.
 
+### Live preview (edit-mode simulation)
+
+Select a PhysBone and a **Live Preview** panel appears bottom-left in the Scene view
+(`Tools > PhysBone Handles > Show Live Preview Panel`). It runs **VRChat's own PhysBone
+solver** on the selected components in edit mode — no Play mode, no upload-and-test loop.
+
+Start/stop, pause with single-iteration frame-stepping, 72/90/120/144 Hz (the same bone really
+does behave differently at 72 and 144), test motions (sway, gust, circle, drop, walk) with
+amount and speed, playback of one of the avatar's own AnimationClips, click-to-grab with
+drag-to-pull and optional pose-on-release, a throwaway drag-through test collider, tip trails,
+a ❄ baseline freeze for before/after comparison, a live `_Angle`/`_Stretch`/`_Squish` readout
+with `_IsGrabbed`/`_IsPosed` flags in the inspector, a small orbitable 3D viewport in the
+inspector, and per-bone curve sampling markers that show what a force's distribution curve
+actually resolves to on each bone along each strand.
+
+**Nothing on your avatar is changed.** Every Transform the solver can reach is snapshotted
+before the first step and restored on stop; scenes that were clean beforehand are marked clean
+again. The baseline freeze is stored separately from that snapshot, so freezing a swung pose can
+never cause it to be restored. The test collider lives on a `HideAndDontSave` object and is
+removed from every component's collider list before it is destroyed. Grab and pose go through
+the SDK's own grab path, so `Allow Grabbing`, `Allow Posing` and the grab/pose filters behave
+exactly as they do in game — and when a component's own setting refuses the grab, the console
+says so rather than the tool appearing broken.
+
+Implementation note: this drives the solver through `VRCDynamicsScheduler.PreScheduleDynamics`
+and `PhysBoneManager`'s public surface, with two narrow reflection fallbacks
+(`GenerateArbitraryChainId`, `EditorSceneManager.ClearSceneDirtiness`) that each degrade with a
+warning rather than failing. Clip playback uses the editor's own `AnimationMode`, the same
+machinery the Animation window uses to pose a rig outside Play mode.
+
+The feature set here was prompted by Vivid Nightmare's paid "TruePhysbones" tool. That tool's
+binary was not decompiled, read, or referenced in any way — this is an original implementation
+written against VRChat's public SDK and the capability list TruePhysbones advertises.
+
 ## Installing
 
 Via VCC / ALCOM: add `https://dragonboivrc.github.io/physbone-scene-handles/index.json` as a
@@ -255,6 +289,14 @@ The newest additions compile clean against Unity 2022.3 plus the real VRChat SDK
   inspector width. If something overlaps or clips, that's the thing to report.
 - The endpoint drag handle, the multi-strand chain walk, and
   **Mirror Settings to Other Side** (`PhysBoneMirrorUtility.cs`).
+- The entire live preview subsystem, new in 0.7.0 (`PhysBonePreview.cs` and the
+  `PhysBonePreview*` / `PhysBoneTestMotion` / `PhysBoneClipPlayback` / `PhysBoneCurveMarkers`
+  files). The safety path is the part that matters most and the part a compile check cannot
+  confirm: snapshot-and-restore is written to put every Transform back, but it has not been
+  watched doing it. Start it on a scene you don't mind re-opening the first time, and check the
+  bones return exactly where they were when you press Stop & Restore. The panel height is
+  computed by hand per visible row, so rows may crowd or clip; grab picking, the drag handle,
+  the right-click release, and the inspector 3D viewport's orbit/zoom have never been clicked.
 
 Angle limit handles (`PhysBoneLimitSceneHandles.cs`) had a real bug in 0.5.0: the limit
 orientation was read from a field named `rotation`, which `VRCPhysBone` doesn't have — that

@@ -133,6 +133,55 @@ with no one-click way to say so.
 - The same action is in the component's **⋮** context menu as **Set Root to Self**, which does
   not depend on the inline button working.
 
+## 8. Live preview (edit-mode PhysBone simulation)
+
+Runs VRChat's own PhysBone solver on the selected components **in edit mode**, without entering
+Play mode and without an upload-and-test loop. Select a PhysBone and the **Live Preview** panel
+appears in the bottom-left of the Scene view (`Tools > PhysBone Handles > Show Live Preview
+Panel` toggles it).
+
+Nothing on your avatar is changed. Every Transform the solver can touch is snapshotted before
+the first step and restored on stop, and scenes that were clean before the preview are marked
+clean again afterwards.
+
+- **Start / Stop & Restore.** Registers the selected components with a private solver instance,
+  stepped from `EditorApplication.update` on a fixed 1/60 s cadence.
+- **Pause, frame-step, reset.** `Step ▸` advances exactly one solver iteration — frame-stepping
+  a settling bone is how you see precisely where it overshoots. Reset snaps back to rest and
+  keeps simulating from there.
+- **Refresh rate: 72 / 90 / 120 / 144 Hz.** The same bone genuinely behaves differently at 72
+  and 144, so the rate you actually play at is selectable.
+- **Test motions.** Sway, Gust, Circle, Drop, and avatar translation (Walk), with Amount and
+  Speed. A bone at rest tells you almost nothing; Pull and Spring only show their character
+  under movement. Offsets are applied relative to the captured base pose each step, never
+  accumulated.
+- **AnimationClip playback.** Drop one of the avatar's own clips in and the chain is tested
+  against the motion it will actually see — "the hair clears the shoulder during the emote I'm
+  shipping", not "the hair looks fine when it sways". Needs an Animator on the avatar root.
+- **Grab and pose testing.** Click a bone to grab it, drag the handle to pull, right-click to
+  let go. Goes through the SDK's own grab path, so `Allow Grabbing`, `Allow Posing` and the
+  grab/pose filters apply exactly as they do in game — and a refusal is explained in the console
+  rather than silently doing nothing. `Pose` leaves the chain posed on release.
+- **Test collider.** Spawns a throwaway sphere collider you can drag through the chain, with a
+  radius slider. It lives on a `HideAndDontSave` object, is pulled back out of every component's
+  collider list before being destroyed, and is never saved to your avatar.
+- **Tip trails.** Draws the path each chain's tip has travelled (2 s of history). The shape of
+  the path is what tells you whether the damping is right.
+- **Baseline freeze (❄).** Freezes the current pose as a ghost outline so a settings change can
+  be compared against where the chain used to sit. Stored separately from the restore snapshot,
+  so freezing can never cause a swung pose to be restored onto your avatar.
+- **Live parameter readout.** `_Angle`, `_Stretch` and `_Squish` as bars plus `_IsGrabbed` /
+  `_IsPosed` flags, in the component inspector — the same values your animator parameters see.
+- **Inspector 3D viewport.** A `3D` toggle in the inspector renders the chain into a small
+  orbitable viewport (drag to orbit, scroll to zoom), so the bone can be watched while the
+  fields right below it are being changed.
+- **Curve sampling markers.** Pick a force (Pull, Spring, Stiffness, Gravity, Gravity Falloff,
+  Immobile, Radius, Max Angle X, Max Stretch) and every bone gets a marker sized and coloured by
+  what that force's distribution curve actually resolves to there, optionally with the number
+  printed. The curve is sampled by normalized depth **along each strand**, so a hand or
+  multi-strand hair shows per-strand values — which is exactly what the inspector's 70-pixel
+  curve thumbnail cannot tell you. Works with the preview stopped too.
+
 ---
 
 ## Requirements
@@ -145,4 +194,7 @@ ships in your avatar build.
 
 See the Status section of `README.md`. In short: the handles and the Auto Collider Generator
 have been used in a real project; the custom inspector's layout, the endpoint handle, the
-multi-strand walk and Mirror Settings compile clean but have not been click-tested.
+multi-strand walk and Mirror Settings compile clean but have not been click-tested. The whole
+live preview subsystem (section 8) is new in 0.7.0 and is compile-verified only — the panel
+layout, the behaviour in motion, grab/pose interaction and the inspector viewport have not been
+click-tested.

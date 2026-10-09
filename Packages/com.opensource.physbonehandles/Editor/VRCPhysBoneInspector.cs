@@ -1,4 +1,5 @@
 #if PBHANDLES_VRCSDK_PRESENT
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using VRC.SDK3.Dynamics.PhysBone.Components;
@@ -53,6 +54,22 @@ namespace OpenSource.PhysBoneHandles
 
         private SerializedProperty P(string name) => serializedObject.FindProperty(name);
 
+        private readonly List<VRCPhysBone> _previewTargets = new List<VRCPhysBone>();
+
+        // The selected components, for the preview panel. Rebuilt each repaint rather than
+        // cached, because multi-selection can change without OnEnable running again.
+        private List<VRCPhysBone> PreviewTargets()
+        {
+            _previewTargets.Clear();
+            foreach (Object o in targets)
+            {
+                VRCPhysBone pb = o as VRCPhysBone;
+                if (pb != null)
+                    _previewTargets.Add(pb);
+            }
+            return _previewTargets;
+        }
+
         private static bool AdvancedForces
         {
             get => EditorPrefs.GetBool(AdvancedForcesKey, false);
@@ -71,6 +88,10 @@ namespace OpenSource.PhysBoneHandles
             }
 
             serializedObject.Update();
+
+            // Above the fields on purpose: the live readout is what you watch while changing
+            // them, so it should not scroll off the top when a section is expanded.
+            PhysBonePreviewInspectorPanel.Draw(PreviewTargets());
 
             DrawTransformsSection();
             DrawForcesSection();

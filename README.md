@@ -10,6 +10,19 @@ see its README for what it does and how to use it, or
 [`FEATURES.md`](Packages/com.opensource.physbonehandles/FEATURES.md) for the full feature
 list.
 
+## Status
+
+**0.7.0** adds a live preview: VRChat's own PhysBone solver, run on the selected components in
+edit mode, with pause/frame-step, 72–144 Hz, test motions, AnimationClip playback, grab/pose
+testing, a throwaway test collider, tip trails, a baseline freeze, a live `_Angle`/`_Stretch`/
+`_Squish` readout, an inspector 3D viewport, and per-bone curve sampling markers. Starting the
+preview snapshots every Transform the solver can reach and stopping restores it, so nothing on
+your avatar is changed.
+
+That whole subsystem is **compile-verified only** — the panel layout, the behaviour in motion,
+the grab/pose interaction and the inspector viewport have not been click-tested in Unity. The
+batch handles and the Auto Collider Generator have been used in a real project.
+
 ## Installing
 
 **Via VCC / ALCOM (VPM):** Add this repository's listing URL —
