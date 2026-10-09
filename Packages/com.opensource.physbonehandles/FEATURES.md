@@ -1,6 +1,6 @@
 # Feature List
 
-Everything PhysBone Scene Handles does, as of **0.6.2**. Free, open source, cross-platform,
+Everything PhysBone Scene Handles does, as of **0.7.0**. Free, open source, cross-platform,
 no license key and no phone-home check.
 
 Covers four VRChat components: `VRCPhysBone`, `VRCPhysBoneCollider`, `VRCContactSender`,
