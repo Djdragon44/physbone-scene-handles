@@ -69,12 +69,20 @@ jobs:
           package-path: ${{ env.unityPackage }}
           include-files: metaList
       
-      # Make a release tag of the version from the package.json file 
+      # Make a release tag of the version from the package.json file.
+      # Done with plain git rather than a Docker-based action: that action builds
+      # from alpine on every run and Docker Hub rate-limits (429) the pull.
       - name: Create Tag
         id: tag_version
-        uses: rickstaa/action-create-tag@88dbf7ff6fe2405f8e8f6c6fdfd78829bc631f83
-        with:
-          tag: "${{ env.version }}"
+        run: |
+          if git rev-parse -q --verify "refs/tags/${{ env.version }}" >/dev/null; then
+            echo "Tag ${{ env.version }} already exists locally; leaving it alone."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag "${{ env.version }}"
+          git push origin "refs/tags/${{ env.version }}"
       
       # Publish the Release to GitHub
       - name: Make Release
